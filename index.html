@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DeliCart — Delivery Inteligente Oruro</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- ==================== AUTH ==================== -->
+  <div id="authRoot" class="auth-page">
+    <div class="auth-card">
+      <img src="assets/logo.svg" alt="DeliCart" class="auth-logo">
+      <h1 class="auth-title">DeliCart</h1>
+      <p class="auth-subtitle">Servicio de delivery inteligente en Oruro</p>
+
+      <div class="auth-tabs">
+        <button class="auth-tab active" data-tab="login">Iniciar sesión</button>
+        <button class="auth-tab" data-tab="register">Registrarse</button>
+      </div>
+
+      <!-- LOGIN -->
+      <form id="loginForm">
+        <div class="form-group">
+          <label>Correo electrónico</label>
+          <input type="email" id="loginEmail" class="form-control" placeholder="tu@email.com" required>
+        </div>
+        <div class="form-group">
+          <label>Contraseña</label>
+          <input type="password" id="loginPassword" class="form-control" placeholder="••••••••" required>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">Entrar</button>
+        <p class="text-sm text-muted mt-2" style="text-align:center">
+          Admin demo: <strong>admin@delicat.bo</strong> / <strong>admin123</strong>
+        </p>
+      </form>
+
+      <!-- REGISTER -->
+      <form id="registerForm" class="hidden">
+        <div class="form-group">
+          <label>Nombre completo</label>
+          <input type="text" id="regName" class="form-control" placeholder="Tu nombre" required>
+        </div>
+        <div class="form-group">
+          <label>Correo electrónico</label>
+          <input type="email" id="regEmail" class="form-control" placeholder="tu@email.com" required>
+        </div>
+        <div class="form-group">
+          <label>Teléfono (opcional)</label>
+          <input type="tel" id="regPhone" class="form-control" placeholder="7xxxxxxx">
+        </div>
+        <div class="form-group">
+          <label>Contraseña</label>
+          <input type="password" id="regPassword" class="form-control" placeholder="Mínimo 6 caracteres" required minlength="6">
+        </div>
+        <div class="form-group">
+          <label>Tipo de cuenta</label>
+          <select id="regRole" class="form-control">
+            <option value="cliente">Cliente</option>
+            <option value="comercio">Comercio aliado</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">Crear cuenta</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== APP ==================== -->
+  <div id="appRoot" class="hidden">
+    <!-- Mobile header -->
+    <div class="mobile-header">
+      <img src="assets/logo.svg" alt="DeliCart" class="mobile-logo">
+      <button class="menu-toggle" id="menuToggle">☰</button>
+    </div>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <div class="app">
+      <!-- SIDEBAR -->
+      <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+          <img src="assets/logo.svg" alt="DeliCart" class="sidebar-logo">
+        </div>
+        <nav class="sidebar-nav">
+          <button class="nav-item active" data-section="home" data-roles="cliente,comercio,repartidor,admin" onclick="showSection('home')">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+            Inicio
+          </button>
+          <button class="nav-item" data-section="pedir" data-roles="cliente,admin" onclick="showSection('pedir')">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
+            Pedir
+          </button>
+          <button class="nav-item" data-section="carrito" data-roles="cliente,admin" onclick="showSection('carrito')">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+            Carrito <span id="cartCount" style="background:#fff;color:#111;font-size:0.7rem;padding:0.1rem 0.4rem;border-radius:999px;margin-left:0.3rem">0</span>
+          </button>
+          <button class="nav-item" data-section="seguimiento" data-roles="cliente,admin" onclick="showSection('seguimiento')">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+            Seguimiento
+          </button>
+          <button class="nav-item" data-section="delipass" data-roles="cliente,admin" onclick="showSection('delipass')">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"/></svg>
+            DeliPass
+          </button>
+
+          <div style="height:1px;background:rgba(255,255,255,0.1);margin:1rem 0.5rem"></div>
+
+          <button class="nav-item" data-section="comercio" data-roles="comercio,admin" onclick="showSection('comercio')">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+            Panel Comercio
+          </button>
+          <button class="nav-item" data-section="repartidor" data-roles="repartidor,admin" onclick="showSection('repartidor')">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            Panel Repartidor
+          </button>
+          <button class="nav-item" data-section="admin" data-roles="admin" onclick="showSection('admin')">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+            Dashboard
+          </button>
+          <button class="nav-item" data-section="empleados" data-roles="admin" onclick="showSection('empleados')">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+            Empleados
+          </button>
+          <button class="nav-item" data-section="usuarios" data-roles="admin" onclick="showSection('usuarios')">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+            Usuarios
+          </button>
+
+          <div style="height:1px;background:rgba(255,255,255,0.1);margin:1rem 0.5rem"></div>
+          <button class="nav-item" onclick="logout()">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+            Cerrar sesión
+          </button>
+        </nav>
+        <div class="sidebar-footer">
+          Oruro · Bolivia 2026
+        </div>
+      </aside>
+
+      <!-- MAIN CONTENT -->
+      <main class="main">
+        <div class="topbar">
+          <div class="topbar-title" id="topbarTitle">Inicio</div>
+          <div class="topbar-actions">
+            <div id="userBadge"></div>
+          </div>
+        </div>
+
+        <div class="content">
+          <!-- HOME -->
+          <section id="section-home" class="section active">
+            <div class="hero">
+              <h1>Delivery inteligente en Oruro</h1>
+              <p>Pedidos en menos de 45 minutos con seguimiento en tiempo real, flota propia y el mejor servicio de la ciudad.</p>
+              <div class="flex gap-1 justify-center flex-wrap">
+                <button class="btn btn-primary" onclick="showSection('pedir')">Pedir ahora</button>
+                <button class="btn btn-outline" onclick="getMyLocation()">📍 Usar mi ubicación</button>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h2 class="card-title">📍 Tu ubicación</h2>
+              </div>
+              <div id="locationStatus" class="location-box">
+                Presiona “Usar mi ubicación” para activar el GPS y calcular distancia y tiempo de entrega.
+              </div>
+              <div id="map"></div>
+            </div>
+
+            <div class="stats-row">
+              <div class="stat-card"><div class="stat-value">45</div><div class="stat-label">Minutos máximo</div></div>
+              <div class="stat-card"><div class="stat-value">7</div><div class="stat-label">Motos (2 eléctricas)</div></div>
+              <div class="stat-card"><div class="stat-value">5 km</div><div class="stat-label">Cobertura inicial</div></div>
+              <div class="stat-card"><div class="stat-value">4.8★</div><div class="stat-label">Meta de satisfacción</div></div>
+            </div>
+          </section>
+
+          <!-- PEDIR -->
+          <section id="section-pedir" class="section">
+            <h2 class="mb-2" style="font-size:1.3rem;font-weight:700">Comercios aliados</h2>
+            <div class="grid" id="storesGrid"></div>
+          </section>
+
+          <!-- STORE DETAIL -->
+          <section id="section-storeDetail" class="section">
+            <div id="storeDetailContent"></div>
+          </section>
+
+          <!-- CARRITO -->
+          <section id="section-carrito" class="section">
+            <h2 class="mb-2" style="font-size:1.3rem;font-weight:700">Tu carrito</h2>
+            <div class="card" id="cartContent"></div>
+          </section>
+
+          <!-- SEGUIMIENTO -->
+          <section id="section-seguimiento" class="section">
+            <h2 class="mb-2" style="font-size:1.3rem;font-weight:700">Seguimiento de pedidos</h2>
+            <div id="ordersList"></div>
+          </section>
+
+          <!-- DELIPASS -->
+          <section id="section-delipass" class="section">
+            <div class="card" style="max-width:480px;margin:0 auto;text-align:center">
+              <h2 style="font-size:1.5rem;font-weight:800">DeliPass</h2>
+              <p class="text-muted mt-1 mb-2">Envíos con gran beneficio todos los meses</p>
+              <div style="font-size:2.75rem;font-weight:800;letter-spacing:-1px">
+                Bs 99<span style="font-size:1rem;font-weight:500;color:var(--gray-600)">/mes</span>
+              </div>
+              <ul style="text-align:left;margin:1.5rem auto;max-width:280px;line-height:1.9;font-size:0.95rem">
+                <li>Hasta 12 envíos incluidos</li>
+                <li>Prioridad en asignación de repartidor</li>
+                <li>Seguimiento prioritario</li>
+                <li>Soporte preferente</li>
+              </ul>
+              <button class="btn btn-primary" id="subscribeBtn" onclick="subscribeDeliPass()">Suscribirme ahora</button>
+              <p id="passStatus" class="mt-2" style="font-weight:600"></p>
+            </div>
+          </section>
+
+          <!-- COMERCIO -->
+          <section id="section-comercio" class="section">
+            <h2 class="mb-2" style="font-size:1.3rem;font-weight:700">Panel de Comercio</h2>
+            <div class="card">
+              <h3 class="card-title mb-2">Pedidos entrantes</h3>
+              <div id="comercioOrders"></div>
+            </div>
+          </section>
+
+          <!-- REPARTIDOR -->
+          <section id="section-repartidor" class="section">
+            <h2 class="mb-2" style="font-size:1.3rem;font-weight:700">Panel de Repartidor</h2>
+            <div class="card">
+              <button class="btn btn-outline" onclick="updateDriverLocation()">📍 Actualizar mi ubicación</button>
+              <div id="driverLocation" class="location-box mt-1">Ubicación no compartida aún</div>
+              <h3 class="card-title mt-2 mb-1">Pedidos asignados</h3>
+              <div id="driverOrders"></div>
+            </div>
+          </section>
+
+          <!-- ADMIN DASHBOARD -->
+          <section id="section-admin" class="section">
+            <h2 class="mb-2" style="font-size:1.3rem;font-weight:700">Dashboard Admin</h2>
+            <div class="stats-row" id="adminStats"></div>
+            <div class="card">
+              <h3 class="card-title mb-2">Últimos pedidos</h3>
+              <div id="adminOrders"></div>
+            </div>
+          </section>
+
+          <!-- EMPLEADOS -->
+          <section id="section-empleados" class="section">
+            <h2 class="mb-2" style="font-size:1.3rem;font-weight:700">Gestión de Empleados</h2>
+            
+            <div class="card mb-2">
+              <h3 class="card-title mb-2">Registrar nuevo empleado</h3>
+              <form id="empForm">
+                <div class="grid-2">
+                  <div class="form-group">
+                    <label>Nombre completo *</label>
+                    <input type="text" id="empName" class="form-control" required placeholder="Nombre del empleado">
+                  </div>
+                  <div class="form-group">
+                    <label>Cargo *</label>
+                    <select id="empRole" class="form-control" required>
+                      <option value="">Seleccionar...</option>
+                      <option value="Repartidor">Repartidor</option>
+                      <option value="Operador Hub">Operador Hub</option>
+                      <option value="Supervisor de flota">Supervisor de flota</option>
+                      <option value="Atención al cliente">Atención al cliente</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label>Teléfono</label>
+                    <input type="tel" id="empPhone" class="form-control" placeholder="7xxxxxxx">
+                  </div>
+                </div>
+                <button type="submit" class="btn btn-primary">Registrar empleado</button>
+              </form>
+            </div>
+
+            <div class="card">
+              <h3 class="card-title mb-2">Lista de empleados</h3>
+              <div id="employeesList"></div>
+            </div>
+          </section>
+
+          <!-- USUARIOS -->
+          <section id="section-usuarios" class="section">
+            <h2 class="mb-2" style="font-size:1.3rem;font-weight:700">Usuarios registrados</h2>
+            <div class="card">
+              <div id="usersList"></div>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  
+  <!-- ==================== PAYMENT MODAL ==================== -->
+  <div class="modal-overlay" id="paymentModal">
+    <div class="modal" style="position:relative">
+      <div class="modal-header">
+        <h3>Método de pago</h3>
+        <button class="modal-close" onclick="closePaymentModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="payment-summary" id="paymentSummary"></div>
+
+        <div class="payment-methods">
+          <div class="payment-method selected" data-method="efectivo" onclick="selectPaymentMethod('efectivo')">
+            <div class="icon">💵</div>
+            <div class="info">
+              <strong>Efectivo</strong>
+              <span>Pagas al recibir el pedido</span>
+            </div>
+            <div class="check">✓</div>
+          </div>
+          <div class="payment-method" data-method="qr" onclick="selectPaymentMethod('qr')">
+            <div class="icon">📱</div>
+            <div class="info">
+              <strong>QR / Transferencia</strong>
+              <span>Banco Unión, BNB, Yape u otros</span>
+            </div>
+            <div class="check">✓</div>
+          </div>
+          <div class="payment-method" data-method="tarjeta" onclick="selectPaymentMethod('tarjeta')">
+            <div class="icon">💳</div>
+            <div class="info">
+              <strong>Tarjeta de crédito/débito</strong>
+              <span>Visa, Mastercard (simulado)</span>
+            </div>
+            <div class="check">✓</div>
+          </div>
+        </div>
+
+        <!-- QR Details -->
+        <div class="payment-details" id="details-qr">
+          <div class="qr-box">
+            <div class="qr-fake"></div>
+            <p style="font-weight:700;margin-bottom:0.35rem">Escanea el código QR</p>
+            <p class="text-sm text-muted">O transfiere a:<br>
+              <strong>Banco Unión</strong> · Cuenta: 1-2345678<br>
+              A nombre de: DeliCart SRL
+            </p>
+            <p class="text-sm mt-1" style="color:var(--gray-600)">Una vez realizado el pago, confirma abajo.</p>
+          </div>
+        </div>
+
+        <!-- Card Details -->
+        <div class="payment-details" id="details-tarjeta">
+          <div class="form-group">
+            <label>Número de tarjeta</label>
+            <input type="text" class="form-control" id="cardNumber" placeholder="4111 1111 1111 1111" maxlength="19">
+          </div>
+          <div class="card-row">
+            <div class="form-group">
+              <label>Vencimiento</label>
+              <input type="text" class="form-control" id="cardExpiry" placeholder="MM/AA" maxlength="5">
+            </div>
+            <div class="form-group">
+              <label>CVV</label>
+              <input type="text" class="form-control" id="cardCvv" placeholder="123" maxlength="4">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Nombre en la tarjeta</label>
+            <input type="text" class="form-control" id="cardName" placeholder="Como aparece en la tarjeta">
+          </div>
+        </div>
+
+        <!-- Efectivo note -->
+        <div class="payment-details active" id="details-efectivo">
+          <div class="location-box">
+            Pagarás en efectivo al momento de recibir el pedido. Ten el monto exacto si es posible.
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="closePaymentModal()">Cancelar</button>
+        <button class="btn btn-primary" id="confirmPaymentBtn" onclick="confirmPayment()">Confirmar y pedir</button>
+      </div>
+
+      <div class="processing-overlay hidden" id="processingOverlay">
+        <div class="spinner"></div>
+        <p style="font-weight:600">Procesando pago...</p>
+      </div>
+    </div>
+  </div>
+
+
+  <div class="toast" id="toast"></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
